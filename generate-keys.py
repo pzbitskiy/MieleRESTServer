@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2025 Alexander Kappner.
 #
-# This file is part of MieleRESTServer 
+# This file is part of MieleRESTServer
 # (see github).
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,4 +20,5 @@
 #
 import MieleCrypto
 import json
-print (MieleCrypto.MieleProvisioningInfo.generate_random().to_pairing_json())
+
+print(MieleCrypto.MieleProvisioningInfo.generate_random().to_pairing_json())
