@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+build
+dist
+*.egg-info
+docs
+tests
+dop2rs
+miele_rest_server

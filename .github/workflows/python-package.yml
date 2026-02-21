@@ -1,0 +1,39 @@
+name: Python Package
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build package
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Install wheel and check CLI
+        run: |
+          python -m venv .venv-cli
+          . .venv-cli/bin/activate
+          pip install dist/*.whl
+          miele-rest-server --version
+
+      - name: Run unit tests
+        run: |
+          python -m venv .venv-tests
+          . .venv-tests/bin/activate
+          pip install .
+          python -m unittest discover -s tests -p "*Tests.py"

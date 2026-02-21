@@ -1,10 +1,9 @@
 FROM python:3.13-slim-bookworm
 
-WORKDIR /python-docker
-
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+WORKDIR /app
 
 COPY . .
 
-CMD [ "python3", "Server.py" , "-b", "127.0.0.1", "-p", "5001" ]
+RUN pip3 install --no-cache-dir .
+
+CMD [ "miele-rest-server", "-b", "127.0.0.1", "-p", "5001" ]

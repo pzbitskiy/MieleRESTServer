@@ -1,10 +1,25 @@
 [Unit]
 Description=Miele REST Interface Server
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/lib/MieleRESTServer/venv_MieleRESTServer/bin/python3 /usr/local/lib/MieleRESTServer/Server.py -b 127.0.0.1 -p 5001
-Restart=on-failure
+Type=simple
 User=mieleserver
+Group=mieleserver
+WorkingDirectory=/opt/mielerestserver
+Environment="MIELE_REST_CONFIG=/etc/MieleRESTServer.config"
+Environment="MIELE_REST_BIND=127.0.0.1"
+Environment="MIELE_REST_PORT=5001"
+EnvironmentFile=-/etc/default/mielerestserver
+ExecStart=/opt/mielerestserver/.venv/bin/miele-rest-server --config ${MIELE_REST_CONFIG} --bind ${MIELE_REST_BIND} --port ${MIELE_REST_PORT}
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=027
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

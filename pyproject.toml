@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MieleRESTServer"
+description = "REST server frontend for local control of Miele@home devices"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+dynamic = ["version"]
+dependencies = [
+  "cryptography",
+  "Flask",
+  "flask_restful",
+  "numpy",
+  "PyYAML",
+  "Requests",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "pylint",
+]
+
+[project.scripts]
+miele-rest-server = "Server:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "_version.__version__" }
+
+[tool.setuptools]
+py-modules = [
+  "Server",
+  "MieleApi",
+  "MieleCrypto",
+  "MieleDop2",
+  "MieleDop2Structures",
+  "MieleErrors",
+  "_version",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+extend-exclude = '''
+(
+  ^/\.venv
+  | ^/dop2rs
+)
+'''
+
+[tool.pylint.main]
+ignore-paths = [
+  "^\\.venv/.*$",
+  "^dop2rs/.*$",
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint."messages control"]
+disable = [
+  "missing-module-docstring",
+  "missing-class-docstring",
+  "missing-function-docstring",
+]

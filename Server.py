@@ -32,11 +32,19 @@ import time
 import yaml
 import sys
 import argparse
+from pathlib import Path
 
 import binascii
 
 PRODUCTNAME="MieleRESTServer"
 endpoints={};
+
+
+def resolve_template_dir():
+    for candidate in (Path.cwd() / "templates", Path(__file__).resolve().parent / "templates"):
+        if candidate.is_dir():
+            return str(candidate)
+    return "templates"
 
 class MieleHelpers:
     def tuple_to_min (t):
@@ -327,7 +335,7 @@ def main(argv=None):
         endpoints[key]=MieleEndpointConfig(value);
 
 
-    app = Flask(__name__, static_url_path="")
+    app = Flask(__name__, static_url_path="", template_folder=resolve_template_dir())
     app.register_error_handler(MieleRESTException, handle_invalid_usage)
     api = Api(app)
     api.add_resource(DevicesSummaryAPI, '/generate-summary')

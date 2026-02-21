@@ -80,7 +80,7 @@ provisioning script attempts both, HTTP first -- one or the other will fail.
 Generate device keys using the provided "generate-keys.py" script.
 
 ```
-virtualenv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ../generate-keys.py > ./keys.json
@@ -108,12 +108,14 @@ Specify the device route as "auto" if you do not know. If "auto", the
 server will detect it upon startup, and print it in the log. You can update the
 config to include the route to save the auto-detection step on startup.
 
-### 4) Install the server 
+### 4) Install the server (Linux + systemd)
 
-```
-cd ../
-sudo ./install.sh
-```
+Follow `docs/INSTALL.md` for complete host installation, service setup, upgrades,
+and uninstall steps.
+
+## Development
+
+For local developer setup plus `black`/`pylint` usage, see `docs/DEVELOPMENT.md`.
 
 ### 5) Test the server
 
@@ -249,4 +251,3 @@ This program is licensed under GPLv3.
 This program is solely based on independent reverse engineering and is not in any way
 authorized, warranted or tested by Miele. Its use may void your warranty, or destroy
 your Miele machines.
-
