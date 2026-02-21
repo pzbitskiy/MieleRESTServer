@@ -20,13 +20,14 @@
 
 
 from binascii import hexlify
+
 from MieleApi import (
     ApplianceState,
-    ProcessState,
-    OperationState,
-    SfValueId,
     DeviceId,
+    OperationState,
+    ProcessState,
     ProtocolType,
+    SfValueId,
 )
 
 
@@ -205,7 +206,7 @@ class DOP2FileList(DOP2Annotator):  # FT_FileList
         return [1, 333]
         # also [9, 333]
 
-    def readFields():
+    def readFields(self):
         self["fileName"] = self.getStringAtIndex(1)
         self["sha256"] = self.getBytesAtIndex(2)
         self["description"] = self.getStringAtIndex(3)

@@ -17,24 +17,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from _version import __version__
-from flask import Flask, jsonify, abort, make_response
-from flask_restful import Api, Resource, reqparse, fields, marshal
-from MieleCrypto import MieleProvisioningInfo, MieleCryptoProvider
-from MieleApi import *
-from MieleErrors import *
-from MieleDop2 import *
-from MieleDop2Structures import *
-from flask import render_template, request
-
-import json
-import time
-import yaml
-import sys
 import argparse
+import binascii
+import json
+import sys
+import time
 from pathlib import Path
 
-import binascii
+import yaml
+from flask import Flask, abort, jsonify, make_response, render_template, request
+from flask_restful import Api, Resource, fields, marshal, reqparse
+
+from _version import __version__
+from MieleApi import *
+from MieleCrypto import MieleCryptoProvider, MieleProvisioningInfo
+from MieleDop2 import *
+from MieleDop2Structures import *
+from MieleErrors import *
 
 PRODUCTNAME = "MieleRESTServer"
 endpoints = {}
@@ -66,7 +65,7 @@ class EndpointLastComm:
         if self.time == None:
             return "never"
         else:
-            return f"{time.monotonic()-self.time}"
+            return f"{time.monotonic() - self.time}"
 
 
 class MieleEndpointConfig:
@@ -154,7 +153,7 @@ class MieleEndpointConfig:
                 progress = 0.0
             else:
                 progress = elapsed / (elapsed + remaining)
-                print(f"Progress: {100*progress:.2f}%")
+                print(f"Progress: {100 * progress:.2f}%")
             j["RemainingMinutes"] = remaining
             j["ElapsedMinutes"] = elapsed
             j["Progress"] = str(progress)
@@ -179,7 +178,7 @@ class MieleEndpointConfig:
 
     def set_device_action(self):
         command = json.dumps({"DeviceAction": 2})
-        #        command=json.dumps({"StandbyState": 0});
+        # command=json.dumps({"StandbyState": 0});
         print(command)
         decrypted, response = self.cryptoProvider.sendHttpRequest(
             host=self.host,
@@ -236,8 +235,9 @@ class CommandPassthroughAPI(Resource):
             parser = MieleAttributeParser()
             return [str(x) for x in parser.parseBytes(response)]
 
+        # return str(binascii.hexlify(response, " "));
 
-#            return str(binascii.hexlify(response, " "));
+
 class Dop2SettingAPI(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
@@ -265,9 +265,7 @@ class Dop2SettingAPI(Resource):
         ann = DOP2_SF_Value(leaf)
         ann.readFields()
         return ann
-
-
-#        return {"decoded": [str(x) for x in leaf], "binary":str(binascii.hexlify(data))}
+        # return {"decoded": [str(x) for x in leaf], "binary":str(binascii.hexlify(data))}
 
 
 class Dop2LeafAPI(Resource):

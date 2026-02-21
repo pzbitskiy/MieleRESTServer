@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-import MieleCrypto
 import json
+
+import MieleCrypto
 
 print(MieleCrypto.MieleProvisioningInfo.generate_random().to_pairing_json())

@@ -18,9 +18,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from enum import Enum
 import binascii
 import struct
+from enum import Enum
 
 
 class MieleIntegerFormat(str, Enum):
@@ -130,7 +130,7 @@ class MieleBool(MieleFixedLengthAttributeDecoder):
 
 class MieleInteger(MieleFixedLengthAttributeDecoder):
     def __init__(self, byteLength, integerFormat):
-        super().__init__(byteLength, f"{integerFormat}{byteLength*8}")
+        super().__init__(byteLength, f"{integerFormat}{byteLength * 8}")
 
     def fixed_length_decode(self, data):
         return int.from_bytes(data)
@@ -140,7 +140,7 @@ class MieleInteger(MieleFixedLengthAttributeDecoder):
 #        return int(data[0]);
 class MieleFloat(MieleFixedLengthAttributeDecoder):
     def __init__(self, byteLength):
-        super().__init__(byteLength, f"float{byteLength*8}")
+        super().__init__(byteLength, f"float{byteLength * 8}")
 
     def fixed_length_decode(self, data):
         return struct.unpack("<f", data)
@@ -174,7 +174,7 @@ class MieleArray(MieleVariableLengthAttributeDecoder):
                 newElement = self.elementDecoder.decode(data[2:])
             except Exception as e:
                 raise Exception(
-                    f"Exception when decoding array element {len(elements)+1} of {numberElements}, elements so far {[str(x) for x in elements]}: {e}, elementWireLength={elementWireLength}, data={binascii.hexlify(data, '-')}"
+                    f"Exception when decoding array element {len(elements) + 1} of {numberElements}, elements so far {[str(x) for x in elements]}: {e}, elementWireLength={elementWireLength}, data={binascii.hexlify(data, '-')}"
                 )
             data = data[2 + newElement.wireLength :]
             elementWireLength = elementWireLength + newElement.wireLength
@@ -236,7 +236,7 @@ class MieleStruct(MieleAttributeDecoder):
 
 
 class Dop2Payload:
-    def __init__(unit, node, fields):
+    def __init__(self, unit, node, fields):
         self.unit = unit
         self.node = (node,)
         self.fields = fields
@@ -339,13 +339,14 @@ class MieleAttributeParser:
         except Exception as e:
             print("error during parsing, returning incomplete parse result")
             fields.append(
-                f"short stop, inner exception {e}, hex={hex} bytes={len(hex)}, {numberOfFields-len(fields)} left in header (numbering correction={fieldNumberingCorrection}, padding bytes expected {padding_bytes_expected}, fields expected {numberOfFields}, remaining payload {binascii.hexlify(remainingPayload)}"
+                f"short stop, inner exception {e}, hex={hex} bytes={len(hex)}, {numberOfFields - len(fields)} left in header (numbering correction={fieldNumberingCorrection}, padding bytes expected {padding_bytes_expected}, fields expected {numberOfFields}, remaining payload {binascii.hexlify(remainingPayload)}"
             )
         return fields
 
 
 def hexdecode_main():
     import sys
+
     from MieleDop2Structures import DOP2Annotators
 
     node = int(sys.argv[1])

@@ -1,6 +1,7 @@
-from MieleCrypto import MieleProvisioningInfo, MieleCryptoProvider
 import json
 import unittest
+
+from MieleCrypto import MieleCryptoProvider, MieleProvisioningInfo
 
 
 class CryptoTestCase(unittest.TestCase):
