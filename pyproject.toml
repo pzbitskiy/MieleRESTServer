@@ -26,6 +26,7 @@ dev = [
 
 [project.scripts]
 miele-rest-server = "Server:main"
+murl = "murl:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "_version.__version__" }
@@ -33,6 +34,7 @@ version = { attr = "_version.__version__" }
 [tool.setuptools]
 py-modules = [
   "Server",
+  "murl",
   "MieleApi",
   "MieleCrypto",
   "MieleDop2",
