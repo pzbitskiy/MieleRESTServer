@@ -13,17 +13,16 @@ class CryptoTestCase(unittest.TestCase):
         pass
 
     def testRoundTrip(self):
-        command = json.dumps({"ProcessAction": 1})
-        authHeader = self.cryptoProvider.get_auth_header(
+        headers, _ = self.cryptoProvider.get_headers_with_auth(
             host="GARBAGE",
             httpMethod="POST",
-            date="March 99, 2099",
             resourcePath="/garbageCan",
-            acceptHeader="",
             contentTypeHeader="",
+            acceptHeader="",
+            date="March 99, 2099",
             body="trash",
         )
-        iv = self.cryptoProvider.iv_from_auth_header(authHeader)
+        iv = self.cryptoProvider.iv_from_auth_header(headers["Authorization"])
         payload = self.cryptoProvider.pad_body_bytes(b"PAYLOAD")
         body_encrypted = self.cryptoProvider.encrypt_payload(payload, iv)
         response_plaintext = MieleCryptoProvider.decrypt_bytes(
