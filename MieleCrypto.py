@@ -226,21 +226,30 @@ class MieleCryptoProvider:
             return ""
         if payload[-1] != "}":
             raise Exception("Plaintext must be terminated with literal '}'")
-        payload=payload[0:-1] + " "* (64-len(payload)) + "}";
-#        payload=payload.encode('ascii')
-        return payload;
-    def encrypt_payload (self, payload, iv):
-        if (isinstance(payload, str)):
-            payload=payload.encode('utf-8');
-        return MieleCryptoProvider.encrypt_bytes(payload, self.provisioningInfo.get_aes_key(), iv)
-    def sendHttpRequest(self, httpMethod="GET", host="10.0.0.11", resourcePath="Devices/", payload=""):
-        print(f"Sending HTTP request to {host}, resourcePath={resourcePath}");
-        acceptHeader= "application/vnd.miele.v1+json"; #the device is not looking at this
-        contentTypeHeader="application / vnd.miele.v1 + json; charset = utf - 8"
-        date="Thu, 01 Jan 1970 02:09:22 GMT" # the device is not looking at this either
-        if (isinstance (payload, str)):
-            payload=self.pad_body_str(payload);
-            print(f"String payload: " + payload);
+        payload = payload[0:-1] + " " * (64 - len(payload)) + "}"
+        #        payload=payload.encode('ascii')
+        return payload
+
+    def encrypt_payload(self, payload, iv):
+        if isinstance(payload, str):
+            payload = payload.encode("utf-8")
+        return MieleCryptoProvider.encrypt_bytes(
+            payload, self.provisioningInfo.get_aes_key(), iv
+        )
+
+    def sendHttpRequest(
+        self, httpMethod="GET", host="10.0.0.11", resourcePath="Devices/", payload=""
+    ):
+        print(f"Sending HTTP request to {host}, resourcePath={resourcePath}")
+        acceptHeader = "application/vnd.miele.v1+json"
+        # the device is not looking at this
+        contentTypeHeader = "application / vnd.miele.v1 + json; charset = utf - 8"
+        date = (
+            "Thu, 01 Jan 1970 02:09:22 GMT"  # the device is not looking at this either
+        )
+        if isinstance(payload, str):
+            payload = self.pad_body_str(payload)
+            print(f"String payload: " + payload)
         else:
             payload = self.pad_body_bytes(payload)
         authHeader = self.get_auth_header(
@@ -272,12 +281,23 @@ class MieleCryptoProvider:
                 data=body_encrypted,
             )
 
-        elif (httpMethod=="PUT"):
-            response=requests.put("http://"+host+"/"+resourcePath, headers={"Content-Type": "application / vnd.miele.v1 + json; charset = utf - 8", "Host" : host, "User-Agent": "Miele@mobile 2.3.3 iOS", "Authorization": authHeader, "Date": date, "Accept":acceptHeader},  data=body_encrypted )
+        elif httpMethod == "PUT":
+            response = requests.put(
+                "http://" + host + "/" + resourcePath,
+                headers={
+                    "Content-Type": "application / vnd.miele.v1 + json; charset = utf - 8",
+                    "Host": host,
+                    "User-Agent": "Miele@mobile 2.3.3 iOS",
+                    "Authorization": authHeader,
+                    "Date": date,
+                    "Accept": acceptHeader,
+                },
+                data=body_encrypted,
+            )
 
-#            response=requests.put("http://"+host+"/"+resourcePath, data={"Authorization": authHeader, "Date": "Fri, 25 Jan 2025 19:57:40 GMT", "Accept": "application/vnd.miele.v2+json; charset=utf-8"})
-        print(response.status_code);
-        print(response.headers);
+        #            response=requests.put("http://"+host+"/"+resourcePath, data={"Authorization": authHeader, "Date": "Fri, 25 Jan 2025 19:57:40 GMT", "Accept": "application/vnd.miele.v2+json; charset=utf-8"})
+        print(response.status_code)
+        print(response.headers)
 
         if response.status_code == 200:
             decrypted = self.decrypt_response(response)
@@ -297,15 +317,21 @@ class MieleCryptoProvider:
         elif full.headers["Content-Type"].find("DOP2") != -1:
             raise Exception("DOP2 decoding not ready for prime time")
         else:
-            raise Exception(f"Unknown content type returned from device: {full.headers['Content-Type']}");
-    def readDop2Node (self, host, deviceRoute, node=""):
-#        deviceRoute="000187683192"
-        resourcePath=f"Devices/{deviceRoute}/DOP2/{node}"
-        [response, r]=self.sendHttpRequest(httpMethod="GET", host=host, resourcePath=resourcePath);
-        return json.loads(response);
-#        if (node==""): #we are reading root node
-#
-    def readDop2Recursive (self, host, deviceRoute):
+            raise Exception(
+                f"Unknown content type returned from device: {full.headers['Content-Type']}"
+            )
+
+    def readDop2Node(self, host, deviceRoute, node=""):
+        #        deviceRoute="000187683192"
+        resourcePath = f"Devices/{deviceRoute}/DOP2/{node}"
+        [response, r] = self.sendHttpRequest(
+            httpMethod="GET", host=host, resourcePath=resourcePath
+        )
+        return json.loads(response)
+
+    #        if (node==""): #we are reading root node
+    #
+    def readDop2Recursive(self, host, deviceRoute):
         try:
             rootNode = self.readDop2Node(host, deviceRoute)  # get root node
         except Exception as e:
@@ -435,64 +461,64 @@ class MieleCryptoProvider:
         #         payload_hmm=(payload[5] << 0) ; # 8 byte header
         #         print(f"{payload_hmm} data type:");
 
-#             print(response[8:].decode("ascii", errors='ignore'))
+        #             print(response[8:].decode("ascii", errors='ignore'))
 
-#             # first field header starts at byte 6
-#             cursor=5;
-#             currentField=1;
-#             if (payload[cursor]==0x02):
-#                 print("field 0x01 suppressed, skipping?!")
-#                 currentField=0x02;
-#                 payload_type=payload_type+1;
-# #            fieldsLeft=payload_type;
-#             while (currentField <= payload_type):
-#                 fieldHeader=payload[cursor];
-#                 if (currentField != fieldHeader):
-#                     break;
-#                     raise Exception(f"Protocol violation -- fields not sequentially numbered; expected {currentField}, found {fieldHeader}, lastField={fields[-1]}");
-#                 cursor=cursor+1;
-#                 fieldType = payload[cursor];
-#                 print (f"Field numbering correct. Decoding field {currentField}, type={fieldType}");
-#                 match fieldType:
-#                     case 21:
-#                         print("skip 13")
-#                         cursor=cursor+14;
-#                     case 16:
-#                         byte0=payload[cursor+1]
-#                         byte1=payload[cursor+2]
-#                         byte2=payload[cursor+3]
-#                         startPacket=cursor;
-#                         cursor=cursor+4;
-#                         myCounter=1;
-#                         counter=payload[cursor] # get counter element from wire
-#                         elementLength=0;
-#                         match byte1:
-#                             case 0x06:
-#                                 elementLength=3;
-#                             case 0x03:
-#                                 elementLength=2;
-#                             case _:
-#                                 elementLength=0
-#                                 break;
-#                         elementLength=elementLength+2;
-#                         while (counter == myCounter):
-#                             print(f"decoding {counter} array entry, elementLEngth={elementLength}");
-#                             cursor=cursor+elementLength;
-#                             counter=payload[cursor];
-#                             myCounter=myCounter+1;
-#                         info=f"{[byte0,byte1,byte2]} unknown array, packet counter={counter}, myCounter={myCounter}, element type {byte1}, detected element length {elementLength}, currentField={currentField}, totalFields={numberFields}, payload left={len(payload[startPacket:])}, contentLeft={binascii.hexlify(payload[startPacket:], sep=' ', bytes_per_sep=2)}";
-#                         raise Exception(f"unknown array -- {info}");
-#                     case 0x02:
-#                         print("2-byte mystery")
-#                         fields.append([fieldType, payload[cursor+1:cursor+2] ])
-#                         cursor=cursor+3;
-#                     case 0x07: #only 0x01 and 0x00 seen here
-#                         print ("3-byte flags");
-#                         fields.append([fieldType, payload[cursor+1:cursor+4]])
-#                         cursor=cursor+4;
-#                     case 0x03:
-#                         print ("2-byte mystery");
-#                         fields.append([fieldType, payload[cursor+1:cursor+3]])
+        #             # first field header starts at byte 6
+        #             cursor=5;
+        #             currentField=1;
+        #             if (payload[cursor]==0x02):
+        #                 print("field 0x01 suppressed, skipping?!")
+        #                 currentField=0x02;
+        #                 payload_type=payload_type+1;
+        # #            fieldsLeft=payload_type;
+        #             while (currentField <= payload_type):
+        #                 fieldHeader=payload[cursor];
+        #                 if (currentField != fieldHeader):
+        #                     break;
+        #                     raise Exception(f"Protocol violation -- fields not sequentially numbered; expected {currentField}, found {fieldHeader}, lastField={fields[-1]}");
+        #                 cursor=cursor+1;
+        #                 fieldType = payload[cursor];
+        #                 print (f"Field numbering correct. Decoding field {currentField}, type={fieldType}");
+        #                 match fieldType:
+        #                     case 21:
+        #                         print("skip 13")
+        #                         cursor=cursor+14;
+        #                     case 16:
+        #                         byte0=payload[cursor+1]
+        #                         byte1=payload[cursor+2]
+        #                         byte2=payload[cursor+3]
+        #                         startPacket=cursor;
+        #                         cursor=cursor+4;
+        #                         myCounter=1;
+        #                         counter=payload[cursor] # get counter element from wire
+        #                         elementLength=0;
+        #                         match byte1:
+        #                             case 0x06:
+        #                                 elementLength=3;
+        #                             case 0x03:
+        #                                 elementLength=2;
+        #                             case _:
+        #                                 elementLength=0
+        #                                 break;
+        #                         elementLength=elementLength+2;
+        #                         while (counter == myCounter):
+        #                             print(f"decoding {counter} array entry, elementLEngth={elementLength}");
+        #                             cursor=cursor+elementLength;
+        #                             counter=payload[cursor];
+        #                             myCounter=myCounter+1;
+        #                         info=f"{[byte0,byte1,byte2]} unknown array, packet counter={counter}, myCounter={myCounter}, element type {byte1}, detected element length {elementLength}, currentField={currentField}, totalFields={numberFields}, payload left={len(payload[startPacket:])}, contentLeft={binascii.hexlify(payload[startPacket:], sep=' ', bytes_per_sep=2)}";
+        #                         raise Exception(f"unknown array -- {info}");
+        #                     case 0x02:
+        #                         print("2-byte mystery")
+        #                         fields.append([fieldType, payload[cursor+1:cursor+2] ])
+        #                         cursor=cursor+3;
+        #                     case 0x07: #only 0x01 and 0x00 seen here
+        #                         print ("3-byte flags");
+        #                         fields.append([fieldType, payload[cursor+1:cursor+4]])
+        #                         cursor=cursor+4;
+        #                     case 0x03:
+        #                         print ("2-byte mystery");
+        #                         fields.append([fieldType, payload[cursor+1:cursor+3]])
 
         #                     cursor=cursor+3;
         #                 case 0x04:
@@ -549,14 +575,14 @@ class MieleCryptoProvider:
         #                     print(f"4-byte mystery");
         #                     fields.append([fieldType, payload[cursor+1:cursor+5]])
 
-#                         cursor=cursor+4;
-#                     case 0x01:
-#                         arrayLength=(payload[cursor+1]<<0)
-#                         cursor=cursor+1;
-#                         arrayData=payload[cursor:cursor+arrayLength]
-#                         print(f"array length {arrayLength}, data={binascii.hexlify(arrayData)}");
-#                         cursor=cursor+arrayLength + 1 + (arrayLength==0) * 1;
-#                         fields.append(arrayData)
+        #                         cursor=cursor+4;
+        #                     case 0x01:
+        #                         arrayLength=(payload[cursor+1]<<0)
+        #                         cursor=cursor+1;
+        #                         arrayData=payload[cursor:cursor+arrayLength]
+        #                         print(f"array length {arrayLength}, data={binascii.hexlify(arrayData)}");
+        #                         cursor=cursor+arrayLength + 1 + (arrayLength==0) * 1;
+        #                         fields.append(arrayData)
 
         #                 case 0x0b:
         #                     print(f"9-byte mystery");
@@ -643,7 +669,7 @@ if __name__ == "__main__":
             # 8 byte header
             print(f"{payload_hmm} data type:")
 
-            print(response[8:].decode("ascii", errors='ignore'))
+            print(response[8:].decode("ascii", errors="ignore"))
 
             # first field header starts at byte 6
             cursor = 5
@@ -710,20 +736,22 @@ if __name__ == "__main__":
                         print(f"4-byte mystery")
                         cursor = cursor + 4
                     case 0x01:
-                        arrayLength=(payload[cursor+1]<<0)
-                        cursor=cursor+1;
-                        arrayData=payload[cursor:cursor+arrayLength]
-                        print(f"array length {arrayLength}, data={binascii.hexlify(arrayData)}");
-                        cursor=cursor+arrayLength + 1 + (arrayLength==0) * 1;
-                    case 0x0b:
-                        print(f"9-byte mystery");
-                        cursor=cursor+10;
+                        arrayLength = payload[cursor + 1] << 0
+                        cursor = cursor + 1
+                        arrayData = payload[cursor : cursor + arrayLength]
+                        print(
+                            f"array length {arrayLength}, data={binascii.hexlify(arrayData)}"
+                        )
+                        cursor = cursor + arrayLength + 1 + (arrayLength == 0) * 1
+                    case 0x0B:
+                        print(f"9-byte mystery")
+                        cursor = cursor + 10
                     case 0x20:
                         # Devices/000187683192/DOP2/1/17
                         print("4 byte mystery")
                         cursor = cursor + 5
                     case 0x21:
-                        print("string array?") # Devices/000187683192/DOP2/1/17
+                        print("string array?")  # Devices/000187683192/DOP2/1/17
 
                     case _:
                         print("unknown")

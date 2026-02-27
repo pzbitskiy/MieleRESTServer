@@ -40,12 +40,8 @@ class ConfigWizardTestCase(unittest.TestCase):
     def test_parse_nmcli_scan_output_with_signal(self):
         output = "Home\\:Net:70:WPA2\nOffice:40:WPA3\nOffice:10:\n"
         networks = parse_nmcli_scan_output(output)
-        self.assertEqual(
-            networks[0], {"SSID": "Home:Net", "RSSI": 70, "Sec": "WPA2"}
-        )
-        self.assertEqual(
-            networks[1], {"SSID": "Office", "RSSI": 40, "Sec": "WPA3"}
-        )
+        self.assertEqual(networks[0], {"SSID": "Home:Net", "RSSI": 70, "Sec": "WPA2"})
+        self.assertEqual(networks[1], {"SSID": "Office", "RSSI": 40, "Sec": "WPA3"})
 
     def test_parse_iw_scan_output(self):
         output = (
@@ -70,9 +66,7 @@ class ConfigWizardTestCase(unittest.TestCase):
             "Encryption key:off\n"
         )
         networks = parse_iwlist_scan_output(output)
-        self.assertEqual(
-            networks[0], {"SSID": "Kitchen", "RSSI": -55, "Sec": "WPA"}
-        )
+        self.assertEqual(networks[0], {"SSID": "Kitchen", "RSSI": -55, "Sec": "WPA"})
         self.assertEqual(networks[1]["SSID"], "Guest")
         self.assertEqual(networks[1]["Sec"], "OPEN")
 

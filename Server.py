@@ -480,7 +480,10 @@ def main(argv=None):
         @app.route("/webui", strict_slashes=False)
         @app.route("/", strict_slashes=False)
         def webui_index():
-            return render_template("generate_summary.html", endpoint_names=list(endpoints.keys()));
+            return render_template(
+                "generate_summary.html", endpoint_names=list(endpoints.keys())
+            )
+
         @app.route("/webui/<string:endpoint>")
         def webui_endpoint(endpoint):
             #        context=EndpointAPI.get(endpoint);
