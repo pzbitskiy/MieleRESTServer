@@ -21,6 +21,7 @@ import binascii
 import hashlib
 import hmac
 import json
+import logging
 import os
 import pprint
 import secrets
@@ -33,6 +34,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from MieleDop2 import MieleAttributeParser
 from MieleDop2Structures import *
 from MieleErrors import *
+
+logger = logging.getLogger(__name__)
 
 
 class Dop2DataField:
@@ -134,7 +137,7 @@ class MieleCryptoProvider:
         )
         response_signature = bytearray.fromhex(response_signature)
         response_iv = response_signature[0:16]
-        print(response_iv)
+        logger.debug(response_iv)
         return response_iv
 
     def decrypt_response(self, response):
@@ -186,7 +189,7 @@ class MieleCryptoProvider:
             self.provisioningInfo.get_signature_key(), payload_bytes, hashlib.sha256
         )
         digest = hmac_obj.hexdigest().upper()
-        print(digest)
+        logger.debug(digest)
         return digest
 
     def get_auth_header(
@@ -217,7 +220,7 @@ class MieleCryptoProvider:
         if len(payload) % blocksize == 0:  # no alignment needed
             return payload
         padding = blocksize - (len(payload) % blocksize)
-        print(f"padding with {padding} bytes")
+        logger.debug(f"padding with {padding} bytes")
         return payload.ljust(len(payload) + padding, b"\x20")
 
     #        return payload;
@@ -240,7 +243,7 @@ class MieleCryptoProvider:
     def sendHttpRequest(
         self, httpMethod="GET", host="10.0.0.11", resourcePath="Devices/", payload=""
     ):
-        print(f"Sending HTTP request to {host}, resourcePath={resourcePath}")
+        logger.debug(f"Sending HTTP request to {host}, resourcePath={resourcePath}")
         acceptHeader = "application/vnd.miele.v1+json"
         # the device is not looking at this
         contentTypeHeader = "application / vnd.miele.v1 + json; charset = utf - 8"
@@ -249,7 +252,7 @@ class MieleCryptoProvider:
         )
         if isinstance(payload, str):
             payload = self.pad_body_str(payload)
-            print(f"String payload: " + payload)
+            logger.debug(f"String payload: " + payload)
         else:
             payload = self.pad_body_bytes(payload)
         authHeader = self.get_auth_header(
@@ -296,8 +299,8 @@ class MieleCryptoProvider:
             )
 
         #            response=requests.put("http://"+host+"/"+resourcePath, data={"Authorization": authHeader, "Date": "Fri, 25 Jan 2025 19:57:40 GMT", "Accept": "application/vnd.miele.v2+json; charset=utf-8"})
-        print(response.status_code)
-        print(response.headers)
+        logger.debug(response.status_code)
+        logger.debug(response.headers)
 
         if response.status_code == 200:
             decrypted = self.decrypt_response(response)
@@ -335,7 +338,7 @@ class MieleCryptoProvider:
         try:
             rootNode = self.readDop2Node(host, deviceRoute)  # get root node
         except Exception as e:
-            print(
+            logger.debug(
                 f"Error obtaining DOP2 root node, perhaps device is not exposing DOP2 endpoint."
             )
             raise MieleRESTException("DOP2 Root Node not found", host)
@@ -346,7 +349,7 @@ class MieleCryptoProvider:
 
         flattened = {}
         for x in rootNode:  # visit each child node
-            print(f"Exploring child node {x}")
+            logger.debug(f"Exploring child node {x}")
             dopTree[x] = {}
             dopTreeBinary[x] = {}
             try:
@@ -355,11 +358,11 @@ class MieleCryptoProvider:
             except Exception as e:
                 dopTree[x] = f"Error reading child node {x}, exception {e}"
                 continue
-            print(f"Leaves {leaves} for node {x}")
+            logger.debug(f"Leaves {leaves} for node {x}")
             dopTreeAnnotated[x] = {}
 
             for leafId in set(leaves):
-                print(f"reading leaf {leafId} in node {x}")
+                logger.debug(f"reading leaf {leafId} in node {x}")
                 try:
                     dopTree[x][leafId] = {}
                     [leafData, leafBytes] = self.readDop2Leaf(
@@ -367,13 +370,13 @@ class MieleCryptoProvider:
                     )
 
                     dopTreeBinary[x][leafId] = str(binascii.hexlify(leafBytes))
-                    print(f"read leaf {leafId} in node {x}:")
+                    logger.debug(f"read leaf {leafId} in node {x}:")
                     for fieldId, fieldData in enumerate(leafData):
                         fieldId = fieldId + 1  # DOP uses one-based index
                         flattened[f"{x}_{leafId}_{fieldId}"] = str(fieldData)
                         dopTree[x][leafId][fieldId] = fieldData
                         # dopTree[x][leafId][fieldId]=fieldData;
-                    print(f"successfully read {leafId} in node {x}")
+                    logger.debug(f"successfully read {leafId} in node {x}")
                     for annotator in DOP2Annotators:
                         if annotator.getLeaf() == [int(x), int(leafId)]:
                             # raise Exception(f"found annotator for {leafId}, {fieldId}");
@@ -392,7 +395,7 @@ class MieleCryptoProvider:
                     errorStr = f"Error reading node {x}, leaf {leafId}, error {str(e)}"
                     dopTree[x][leafId] = errorStr
                     flattened[f"{x}_{leafId}"] = errorStr
-        print(dopTree)
+        logger.debug(dopTree)
         #        dopTree=sorted(dopTree.items(), key=lambda kv: str(kv[1]));
         dump = json.dumps(flattened, indent=4)
         #        with open("doptree.txt", "w+") as f:
@@ -413,7 +416,7 @@ class MieleCryptoProvider:
             resourcePath=f"Devices/{deviceRoute}/DOP2/{unit}/{attribute}?idx1={idx1}&idx2={idx2}",
             payload=payload,
         )
-        print(f"Sent PUT request to write {unit}/{attribute}, {
+        logger.debug(f"Sent PUT request to write {unit}/{attribute}, {
                 len(payload)
             } bytes payload sent, got response {response}")
         return response
@@ -428,7 +431,7 @@ class MieleCryptoProvider:
         )
         if response:
             response = response[0]
-        print(response)
+        logger.debug(response)
         x = "DOP2/{node}/{leaf}"
         if response:
             return [parser.parseBytes(response), response]
@@ -633,20 +636,20 @@ if __name__ == "__main__":
             if full.headers["Content-Type"].find("json") != -1:
                 j = json.loads(response)
                 6
-                print(json.dumps(j, indent=2))
+                logger.debug(json.dumps(j, indent=2))
             else:
                 raise Exception("Exception")
         except BaseException:
-            print(f"failed to decode as json, len={len(response)}")
-            print(binascii.hexlify(response, " ", 1))
-            print("attempting to decode DOP2")
-            print(r)
+            logger.debug(f"failed to decode as json, len={len(response)}")
+            logger.debug(binascii.hexlify(response, " ", 1))
+            logger.debug("attempting to decode DOP2")
+            logger.debug(r)
             first_byte = response[1] + (response[0] << 8)
             parent_attribute_id = (response[2] << 8) + response[3]
             attribute_id = (response[4] << 8) * 1 + response[5]
 
             padding_bytes_expected = len(response) - first_byte - 2
-            print(
+            logger.debug(
                 f"reading parent attribute {parent_attribute_id}, attribute {attribute_id}, expecting {first_byte} payload bytes and {padding_bytes_expected} padding bytes"
             )
             if padding_bytes_expected > 0:
@@ -654,28 +657,28 @@ if __name__ == "__main__":
                     if x != 0x20:
                         raise Exception("Error decoding; DOP2 Protocol Violation.")
             payload = response[8 : len(response) - padding_bytes_expected]
-            print("payload:" + str(len(payload)) + " bytes")
-            print(binascii.hexlify(payload, " ", 1))
+            logger.debug("payload:" + str(len(payload)) + " bytes")
+            logger.debug(binascii.hexlify(payload, " ", 1))
 
             if len(payload) == 0:
-                print("empty response, returning")
+                logger.debug("empty response, returning")
                 payload_type = 0
             else:
                 payload_type = (payload[3] << 0) + (payload[4] << 8)
                 # 8 byte header
-            print(f"header indicates number of fields: {payload_type}")
+            logger.debug(f"header indicates number of fields: {payload_type}")
 
             payload_hmm = payload[5] << 0
             # 8 byte header
-            print(f"{payload_hmm} data type:")
+            logger.debug(f"{payload_hmm} data type:")
 
-            print(response[8:].decode("ascii", errors="ignore"))
+            logger.debug(response[8:].decode("ascii", errors="ignore"))
 
             # first field header starts at byte 6
             cursor = 5
             currentField = 1
             if payload[cursor] == 0x02:
-                print("field 0x01 suppressed, skipping?!")
+                logger.debug("field 0x01 suppressed, skipping?!")
                 currentField = 0x02
                 payload_type = payload_type + 1
             #            fieldsLeft=payload_type;
@@ -687,18 +690,18 @@ if __name__ == "__main__":
                     )
                 cursor = cursor + 1
                 fieldType = payload[cursor]
-                print(
+                logger.debug(
                     f"Field numbering correct. Decoding field {currentField}, type={fieldType}"
                 )
                 match fieldType:
                     case 0x02:
-                        print("2-byte mystery")
+                        logger.debug("2-byte mystery")
                         cursor = cursor + 3
                     case 0x07:
-                        print("3-byte mystery")
+                        logger.debug("3-byte mystery")
                         cursor = cursor + 4
                     case 0x03:
-                        print("2-byte mystery")
+                        logger.debug("2-byte mystery")
                         cursor = cursor + 3
                     case 0x04:
                         elements = 0
@@ -710,51 +713,51 @@ if __name__ == "__main__":
                     case 0x05:
                         # contentBytes=payload[cursor+2] & 0xF;
                         # elementLength=payload[cursor+5]
-                        print("4 byte mystery?")
+                        logger.debug("4 byte mystery?")
                         # print(f"variable length mystery {contentBytes} elements/content bytes (could be strings), {elementLength} bytes per element");
                         cursor = cursor + 4
                         # 3 byte mystery?
                     case 0x08:
-                        print(f"5-byte mystery")
+                        logger.debug(f"5-byte mystery")
                         cursor = cursor + 6
                     case 23:
-                        print(f"64-byte array?")
+                        logger.debug(f"64-byte array?")
                         cursor = cursor + 64
                     case 0x12:
                         cursor = cursor + 2
                         stringData = payload[cursor + 1 : cursor + stringLength]
-                        print(f"string length {stringLength}, data={stringData}")
+                        logger.debug(f"string length {stringLength}, data={stringData}")
                         cursor = cursor + len(stringData) + 1
                         if cursor < len(payload) and payload[cursor] == 0x00:
                             cursor = cursor + 1
                     case 0x19:
                         byte0 = payload[cursor + 1]
                         byte1 = payload[cursor + 2]
-                        print(f"4-byte (dynamic length?) mystery {byte0}, {byte1}")
+                        logger.debug(f"4-byte (dynamic length?) mystery {byte0}, {byte1}")
                         cursor = cursor + (byte1 * 4) + 4
                     case 0x09:
-                        print(f"4-byte mystery")
+                        logger.debug(f"4-byte mystery")
                         cursor = cursor + 4
                     case 0x01:
                         arrayLength = payload[cursor + 1] << 0
                         cursor = cursor + 1
                         arrayData = payload[cursor : cursor + arrayLength]
-                        print(
+                        logger.debug(
                             f"array length {arrayLength}, data={binascii.hexlify(arrayData)}"
                         )
                         cursor = cursor + arrayLength + 1 + (arrayLength == 0) * 1
                     case 0x0B:
-                        print(f"9-byte mystery")
+                        logger.debug(f"9-byte mystery")
                         cursor = cursor + 10
                     case 0x20:
                         # Devices/000187683192/DOP2/1/17
-                        print("4 byte mystery")
+                        logger.debug("4 byte mystery")
                         cursor = cursor + 5
                     case 0x21:
-                        print("string array?")  # Devices/000187683192/DOP2/1/17
+                        logger.debug("string array?")  # Devices/000187683192/DOP2/1/17
 
                     case _:
-                        print("unknown")
+                        logger.debug("unknown")
                         break
                 currentField = currentField + 1
 #        elapsed=tuple_to_min(j["ElapsedTime"])

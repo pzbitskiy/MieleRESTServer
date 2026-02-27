@@ -20,6 +20,7 @@
 import argparse
 import binascii
 import json
+import logging
 import sys
 import time
 from pathlib import Path
@@ -37,6 +38,7 @@ from MieleErrors import *
 
 PRODUCTNAME = "MieleRESTServer"
 endpoints = {}
+logger = logging.getLogger(__name__)
 
 
 def resolve_template_dir():
@@ -87,7 +89,7 @@ class MieleEndpointConfig:
             self.device_route = d["route"]
         else:
             self.autodetect_route()
-            print(
+            logger.info(
                 f'Autodetected device route for host {self.host}; please add "deviceRoute: "{self.device_route}" in your config file'
             )
 
@@ -102,7 +104,7 @@ class MieleEndpointConfig:
     def autodetect_route(self):
         response = self.send_get(f"Devices")
         j = json.loads(response)
-        print(j)
+        logger.debug(j)
         if len(j.keys()) == 1:
             self.device_route = list(j.keys())[0]
         else:
@@ -153,7 +155,7 @@ class MieleEndpointConfig:
                 progress = 0.0
             else:
                 progress = elapsed / (elapsed + remaining)
-                print(f"Progress: {100 * progress:.2f}%")
+                logger.debug(f"Progress: {100 * progress:.2f}%")
             j["RemainingMinutes"] = remaining
             j["ElapsedMinutes"] = elapsed
             j["Progress"] = str(progress)
@@ -166,27 +168,27 @@ class MieleEndpointConfig:
 
     def set_process_action(self):
         command = json.dumps({"ProcessAction": 1})
-        print(command)
+        logger.debug(command)
         decrypted, response = self.cryptoProvider.sendHttpRequest(
             host=self.host,
             httpMethod="PUT",
             resourcePath=f"Devices/{self.device_route}/State",
             payload=command,
         )
-        print(decrypted)
+        logger.debug(decrypted)
         return json.loads(decrypted)
 
     def set_device_action(self):
         command = json.dumps({"DeviceAction": 2})
         # command=json.dumps({"StandbyState": 0});
-        print(command)
+        logger.debug(command)
         decrypted, response = self.cryptoProvider.sendHttpRequest(
             host=self.host,
             httpMethod="PUT",
             resourcePath=f"Devices/{self.device_route}/State",
             payload=command,
         )
-        print(decrypted)
+        logger.debug(decrypted)
         return json.loads(decrypted)
 
     def send_get(self, path):
@@ -194,11 +196,11 @@ class MieleEndpointConfig:
             response = self.cryptoProvider.sendHttpRequest(
                 host=self.host, resourcePath=path
             )[0]
-            print(response)
+            logger.debug(response)
             self.last_comm.reset()
             return response
         except:
-            print("Communication error")
+            logger.exception("Communication error")
             raise
 
     def serialize(self):
@@ -261,7 +263,7 @@ class Dop2SettingAPI(Resource):
         for fieldId, fieldData in enumerate(leafData):
             fieldId = fieldId + 1  # DOP uses one-based index
             leaf[fieldId] = fieldData
-        print(leaf)
+        logger.debug(leaf)
         ann = DOP2_SF_Value(leaf)
         ann.readFields()
         return ann
@@ -286,7 +288,7 @@ class Dop2LeafAPI(Resource):
         payload = request.get_data()
         if request.headers.get("Content-Type", "") == "text/plain":
             payload = binascii.unhexlify(payload)
-        print(f"PUT {unit}/{attribute}, payload={binascii.hexlify(payload)}")
+        logger.debug(f"PUT {unit}/{attribute}, payload={binascii.hexlify(payload)}")
         ##        b="000e000e008200010001000100010400";
         #        b="FFFF000e007a00010001000200010b0000000000000000000209000000002020"
         ##        b="001c000e007a00010001000200010b000000000010000000020900001000" #this sets the time 14/122
@@ -439,15 +441,25 @@ def main(argv=None):
         action="store_true",
         help="run REST server in debug mode, default off",
     )
+    parser.add_argument(
+        "-l", "--log-level",
+        default="INFO",
+        type=str.upper,
+        choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"],
+        help="set Python logging level (default: INFO)",
+    )
 
     cmdargs = parser.parse_args(argv)
+    logging.basicConfig(
+        level=getattr(logging, cmdargs.log_level),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
 
     with open(cmdargs.config) as stream:
         try:
             config_file = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-            print("Error loading configuration file, exiting")
+        except yaml.YAMLError:
+            logger.exception("Error loading configuration file, exiting")
             return 1
 
     endpoints.clear()
@@ -488,13 +500,13 @@ def main(argv=None):
         def webui_endpoint(endpoint):
             #        context=EndpointAPI.get(endpoint);
             context = endpoints[endpoint].get_device_summary_annotated()
-            print(context)
+            logger.debug(context)
             return render_template(
                 "generate_summary.html", endpoint=context, endpointName=endpoint
             )
 
     else:
-        print("WebUI disabled.")
+        logger.info("WebUI disabled.")
 
     app.run(debug=cmdargs.debug, host=cmdargs.bind, port=cmdargs.port)
     return 0
